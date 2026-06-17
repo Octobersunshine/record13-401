@@ -72,7 +72,13 @@ def main():
         "-d", "--dither",
         choices=[d.value for d in DitherMethod],
         default=DitherMethod.NONE.value,
-        help="抖动方式: none(默认), floyd_steinberg, ordered",
+        help="抖动方式: none(默认), floyd_steinberg, atkinson, burkes, sierra, sierra_lite, bayer2, bayer4, bayer8, ordered",
+    )
+    parser.add_argument(
+        "--dither-strength",
+        type=float,
+        default=1.0,
+        help="抖动强度 (0.0-2.0)，默认 1.0。值越高抖动越明显，0 为无抖动。",
     )
     parser.add_argument(
         "--extensions",
@@ -93,6 +99,7 @@ def main():
             colors=args.colors,
             method=QuantizeMethod(args.method),
             dither=DitherMethod(args.dither),
+            dither_strength=args.dither_strength,
         )
     except ValueError as e:
         print(f"错误: {e}", file=sys.stderr)
