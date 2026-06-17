@@ -26,6 +26,27 @@ class DitherMethod(str, Enum):
     ORDERED = "ordered"
 
 
+class PaletteType(str, Enum):
+    AUTO = "auto"
+    WEB_SAFE = "web_safe"
+    GRAYSCALE = "grayscale"
+    SEPIA = "sepia"
+    VGA_16 = "vga_16"
+    VGA_256 = "vga_256"
+    CGA = "cga"
+    EGA = "ega"
+    NES = "nes"
+    GAMEBOY = "gameboy"
+    WARM = "warm"
+    COOL = "cool"
+    PASTEL = "pastel"
+    NEON = "neon"
+    MONOCHROME_AMBER = "monochrome_amber"
+    MONOCHROME_GREEN = "monochrome_green"
+    RETRO_GAME = "retro_game"
+    CUSTOM = "custom"
+
+
 _DIFFUSION_MATRICES = {
     DitherMethod.FLOYD_STEINBERG: {
         "offsets": [(0, 1, 7), (1, -1, 3), (1, 0, 5), (1, 1, 1)],
@@ -81,6 +102,137 @@ _BAYER_MATRICES = {
 }
 
 
+_FIXED_PALETTES = {
+    PaletteType.VGA_16: [
+        (0, 0, 0), (128, 0, 0), (0, 128, 0), (128, 128, 0),
+        (0, 0, 128), (128, 0, 128), (0, 128, 128), (192, 192, 192),
+        (128, 128, 128), (255, 0, 0), (0, 255, 0), (255, 255, 0),
+        (0, 0, 255), (255, 0, 255), (0, 255, 255), (255, 255, 255),
+    ],
+    PaletteType.CGA: [
+        (0, 0, 0), (85, 255, 255), (255, 85, 255), (255, 255, 255),
+    ],
+    PaletteType.EGA: [
+        (0, 0, 0), (0, 0, 170), (0, 170, 0), (0, 170, 170),
+        (170, 0, 0), (170, 0, 170), (170, 85, 0), (170, 170, 170),
+        (85, 85, 85), (85, 85, 255), (85, 255, 85), (85, 255, 255),
+        (255, 85, 85), (255, 85, 255), (255, 255, 85), (255, 255, 255),
+    ],
+    PaletteType.NES: [
+        (124, 124, 124), (0, 0, 0), (168, 0, 32), (228, 0, 88),
+        (248, 56, 0), (228, 92, 16), (168, 124, 0), (184, 168, 0),
+        (36, 120, 0), (0, 136, 0), (0, 168, 0), (0, 120, 100),
+        (0, 88, 136), (0, 0, 252), (104, 68, 252), (216, 0, 204),
+        (248, 24, 148), (248, 88, 0), (255, 168, 0), (248, 184, 0),
+        (248, 184, 0), (124, 184, 0), (0, 252, 136), (0, 252, 252),
+        (0, 136, 252), (56, 200, 252), (136, 136, 252), (184, 124, 248),
+        (248, 120, 248), (248, 88, 168), (255, 184, 228), (255, 228, 220),
+        (255, 228, 168), (255, 248, 120), (216, 248, 120), (124, 252, 184),
+        (255, 255, 255), (204, 204, 204), (168, 168, 168), (124, 124, 124),
+    ],
+    PaletteType.GAMEBOY: [
+        (15, 56, 15), (48, 98, 48), (139, 172, 15), (155, 188, 15),
+    ],
+    PaletteType.RETRO_GAME: [
+        (0, 0, 0), (255, 255, 255), (136, 0, 0), (170, 255, 238),
+        (204, 68, 204), (0, 204, 85), (0, 0, 170), (238, 238, 119),
+        (221, 136, 85), (102, 68, 0), (255, 119, 119), (51, 51, 51),
+        (119, 119, 119), (170, 255, 102), (0, 136, 255), (187, 187, 187),
+    ],
+    PaletteType.WARM: [
+        (255, 51, 51), (255, 102, 0), (255, 153, 51), (255, 204, 102),
+        (255, 255, 153), (255, 204, 204), (255, 153, 153), (255, 102, 102),
+        (204, 51, 51), (153, 0, 0), (102, 0, 0), (51, 0, 0),
+        (255, 204, 102), (255, 187, 51), (255, 170, 0), (255, 136, 0),
+    ],
+    PaletteType.COOL: [
+        (0, 51, 102), (0, 102, 204), (51, 153, 255), (102, 204, 255),
+        (153, 238, 255), (204, 255, 255), (0, 153, 153), (0, 204, 204),
+        (51, 255, 255), (0, 102, 102), (0, 51, 51), (0, 0, 102),
+        (51, 51, 204), (102, 102, 255), (153, 153, 255), (204, 204, 255),
+    ],
+    PaletteType.PASTEL: [
+        (255, 179, 186), (255, 223, 186), (255, 255, 186), (186, 255, 201),
+        (186, 225, 255), (179, 186, 255), (217, 179, 255), (255, 179, 241),
+        (255, 204, 204), (255, 229, 204), (255, 255, 204), (204, 255, 204),
+        (204, 255, 255), (204, 204, 255), (255, 204, 229), (255, 230, 245),
+    ],
+    PaletteType.NEON: [
+        (57, 255, 20), (50, 255, 255), (255, 50, 255), (255, 255, 50),
+        (255, 50, 50), (50, 50, 255), (255, 100, 200), (100, 255, 100),
+        (255, 150, 50), (50, 255, 150), (150, 50, 255), (255, 255, 255),
+        (0, 0, 0), (255, 0, 127), (0, 255, 127), (127, 0, 255),
+    ],
+    PaletteType.MONOCHROME_AMBER: [
+        (0, 0, 0), (51, 32, 0), (102, 64, 0), (153, 96, 0),
+        (204, 128, 0), (255, 160, 0), (255, 191, 64), (255, 223, 128),
+        (255, 255, 191), (255, 255, 255),
+    ],
+    PaletteType.MONOCHROME_GREEN: [
+        (0, 0, 0), (0, 32, 0), (0, 64, 0), (0, 96, 0),
+        (0, 128, 0), (0, 160, 0), (0, 191, 64), (0, 223, 128),
+        (0, 255, 191), (255, 255, 255),
+    ],
+}
+
+
+def generate_web_safe_palette() -> List[Tuple[int, int, int]]:
+    palette = []
+    for r in range(0, 256, 51):
+        for g in range(0, 256, 51):
+            for b in range(0, 256, 51):
+                palette.append((r, g, b))
+    return palette
+
+
+def generate_grayscale_palette(levels: int = 256) -> List[Tuple[int, int, int]]:
+    levels = min(max(levels, 2), 256)
+    palette = []
+    for i in range(levels):
+        v = int(i * 255 / (levels - 1))
+        palette.append((v, v, v))
+    return palette
+
+
+def generate_sepia_palette(levels: int = 256) -> List[Tuple[int, int, int]]:
+    levels = min(max(levels, 2), 256)
+    palette = []
+    for i in range(levels):
+        t = i / (levels - 1)
+        r = int(205 + 50 * t)
+        g = int(160 + 95 * t)
+        b = int(120 + 135 * t)
+        palette.append((min(r, 255), min(g, 255), min(b, 255)))
+    return palette
+
+
+def generate_vga_256_palette() -> List[Tuple[int, int, int]]:
+    palette = []
+    for i in range(16):
+        intensity = 255 if i >= 8 else 192
+        r = intensity if i & 1 else 0
+        g = intensity if i & 2 else 0
+        b = intensity if i & 4 else 0
+        palette.append((r, g, b))
+
+    for r_idx in range(6):
+        for g_idx in range(6):
+            for b_idx in range(6):
+                r = int(r_idx * 255 / 5)
+                g = int(g_idx * 255 / 5)
+                b = int(b_idx * 255 / 5)
+                palette.append((r, g, b))
+
+    for i in range(1, 25):
+        v = int(i * 255 / 24)
+        palette.append((v, v, v))
+
+    while len(palette) < 256:
+        palette.append((0, 0, 0))
+
+    return palette[:256]
+
+
 class ColorQuantizer:
     def __init__(
         self,
@@ -88,17 +240,53 @@ class ColorQuantizer:
         method: QuantizeMethod = QuantizeMethod.MEDIAN_CUT,
         dither: DitherMethod = DitherMethod.NONE,
         palette: Optional[List[Tuple[int, int, int]]] = None,
+        palette_type: PaletteType = PaletteType.AUTO,
         dither_strength: float = 1.0,
     ):
         if colors < 2 or colors > 256:
             raise ValueError("colors must be between 2 and 256")
         if not 0.0 <= dither_strength <= 2.0:
             raise ValueError("dither_strength must be between 0.0 and 2.0")
+
         self.colors = colors
         self.method = method
         self.dither = dither
-        self.palette = palette
         self.dither_strength = dither_strength
+        self.palette_type = palette_type
+        self.palette = palette
+
+        self._effective_palette = self._resolve_palette()
+
+        if self._effective_palette is not None:
+            if len(self._effective_palette) < 2:
+                raise ValueError("Palette must have at least 2 colors")
+            if len(self._effective_palette) > 256:
+                raise ValueError("Palette cannot have more than 256 colors")
+
+    def _resolve_palette(self) -> Optional[List[Tuple[int, int, int]]]:
+        if self.palette is not None:
+            self.palette_type = PaletteType.CUSTOM
+            return self.palette
+
+        if self.palette_type == PaletteType.AUTO:
+            return None
+
+        if self.palette_type in _FIXED_PALETTES:
+            return list(_FIXED_PALETTES[self.palette_type])
+
+        if self.palette_type == PaletteType.WEB_SAFE:
+            return generate_web_safe_palette()
+
+        if self.palette_type == PaletteType.GRAYSCALE:
+            return generate_grayscale_palette(self.colors)
+
+        if self.palette_type == PaletteType.SEPIA:
+            return generate_sepia_palette(self.colors)
+
+        if self.palette_type == PaletteType.VGA_256:
+            return generate_vga_256_palette()
+
+        return None
 
     def _get_pil_dither(self) -> int:
         if self.dither == DitherMethod.FLOYD_STEINBERG:
@@ -108,8 +296,8 @@ class ColorQuantizer:
         return Image.Dither.NONE
 
     def _build_palette_array(self, img: Image.Image) -> np.ndarray:
-        if self.palette:
-            return np.array(self.palette, dtype=np.float64)
+        if self._effective_palette is not None:
+            return np.array(self._effective_palette, dtype=np.float64)
 
         if self.method == QuantizeMethod.KMEANS:
             return self._compute_kmeans_palette(img)
@@ -263,11 +451,11 @@ class ColorQuantizer:
         return Image.fromarray(arr, mode="RGB")
 
     def _quantize_kmeans(self, img: Image.Image) -> Image.Image:
-        palette = self._compute_kmeans_palette(img)
+        palette = self._build_palette_array(img)
         return self._apply_dither(img, palette)
 
     def _quantize_pillow(self, img: Image.Image) -> Image.Image:
-        if self.dither == DitherMethod.NONE:
+        if self.dither == DitherMethod.NONE and self._effective_palette is None:
             if img.mode != "RGB":
                 img = img.convert("RGB")
 
@@ -280,16 +468,6 @@ class ColorQuantizer:
                 "method": pil_method,
                 "dither": Image.Dither.NONE,
             }
-
-            if self.palette:
-                palette_img = Image.new("P", (1, 1))
-                flat_palette = []
-                for rgb in self.palette:
-                    flat_palette.extend(rgb)
-                while len(flat_palette) < 768:
-                    flat_palette.extend([0, 0, 0])
-                palette_img.putpalette(flat_palette)
-                kwargs["palette"] = palette_img
 
             return img.quantize(**kwargs).convert("RGB")
 
@@ -329,9 +507,11 @@ class ColorQuantizer:
             "size_reduction_pct": round((1 - compressed_size / original_size) * 100, 2) if original_size > 0 else 0,
             "unique_colors": unique_colors,
             "target_colors": self.colors,
+            "palette_colors": len(self._effective_palette) if self._effective_palette else self.colors,
             "method": self.method.value,
             "dither": self.dither.value,
             "dither_strength": self.dither_strength,
+            "palette_type": self.palette_type.value,
             "original_mode": img.mode,
             "original_size_px": img.size,
         }

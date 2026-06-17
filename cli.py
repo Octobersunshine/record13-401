@@ -3,18 +3,18 @@ import json
 import sys
 from pathlib import Path
 
-from color_quantizer import ColorQuantizer, QuantizeMethod, DitherMethod
+from color_quantizer import ColorQuantizer, QuantizeMethod, DitherMethod, PaletteType
 
 
 def print_info_table(info_list):
     if not info_list:
         return
 
-    headers = ["文件名", "原始大小", "压缩后大小", "压缩率%", "颜色数", "算法", "抖动"]
+    headers = ["文件名", "原始大小", "压缩后大小", "压缩率%", "颜色数", "调色板", "算法", "抖动"]
     rows = []
     for info in info_list:
         if "error" in info:
-            rows.append([info.get("filename", "?"), "-", "-", "-", "-", "-", f"错误: {info['error']}"])
+            rows.append([info.get("filename", "?"), "-", "-", "-", "-", "-", "-", f"错误: {info['error']}"])
         else:
             rows.append([
                 info.get("filename", "-"),
@@ -22,6 +22,7 @@ def print_info_table(info_list):
                 f"{info['compressed_size'] / 1024:.1f}KB",
                 f"{info['size_reduction_pct']:.1f}%",
                 str(info['unique_colors']),
+                info.get('palette_type', 'auto'),
                 info['method'],
                 info['dither'],
             ])
@@ -42,17 +43,31 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 示例:
-  # 单张图片量化为 256 色
+  # 单张图片量化为 256 色（自动调色板）
   python cli.py input.jpg -o output.png -c 256
+
+  # 使用 NES 复古游戏调色板 + Bayer 抖动
+  python cli.py input.jpg -o output.png --palette-type nes -d bayer4
+
+  # 灰度调色板 + 64 色级别
+  python cli.py input.jpg -o output.png -c 64 --palette-type grayscale
+
+  # 棕褐色怀旧风 + Sierra 抖动
+  python cli.py input.jpg -o output.png --palette-type sepia -d sierra
 
   # 使用 K-Means 算法 + Floyd-Steinberg 抖动
   python cli.py input.jpg -o output.png -c 64 -m kmeans -d floyd_steinberg
 
-  # 批量处理目录中的所有图片
-  python cli.py -i ./input_dir -o ./output_dir -c 128
+  # 批量处理目录中的所有图片，使用 GameBoy 调色板
+  python cli.py -i ./input_dir -o ./output_dir --palette-type gameboy
 
   # 导出调色板
   python cli.py input.jpg --export-palette palette.png
+
+支持的调色板类型:
+  auto, web_safe, grayscale, sepia, vga_16, vga_256, cga, ega, nes,
+  gameboy, warm, cool, pastel, neon, monochrome_amber, monochrome_green,
+  retro_game, custom
         """,
     )
 
@@ -81,6 +96,18 @@ def main():
         help="抖动强度 (0.0-2.0)，默认 1.0。值越高抖动越明显，0 为无抖动。",
     )
     parser.add_argument(
+        "--palette-type",
+        choices=[p.value for p in PaletteType if p != PaletteType.CUSTOM],
+        default=PaletteType.AUTO.value,
+        help="调色板类型: auto(默认, 从图片提取), web_safe, grayscale, sepia, vga_16, vga_256, cga, ega, nes, gameboy, warm, cool, pastel, neon, monochrome_amber, monochrome_green, retro_game",
+    )
+    parser.add_argument(
+        "--custom-palette",
+        nargs="+",
+        type=str,
+        help="自定义调色板，格式为 R,G,B 三元组，空格分隔。如: \"255,0,0 0,255,0 0,0,255\"",
+    )
+    parser.add_argument(
         "--extensions",
         nargs="+",
         default=[".jpg", ".jpeg", ".png", ".bmp", ".gif", ".tiff", ".webp"],
@@ -94,12 +121,28 @@ def main():
     if not args.input and not args.input_dir:
         parser.error("请指定输入图片路径 (input) 或输入目录 (--input-dir)")
 
+    custom_palette = None
+    if args.custom_palette:
+        try:
+            custom_palette = []
+            for arg in args.custom_palette:
+                for color_str in arg.split():
+                    r, g, b = [int(x) for x in color_str.split(",")]
+                    if not (0 <= r <= 255 and 0 <= g <= 255 and 0 <= b <= 255):
+                        raise ValueError(f"颜色值必须在 0-255 之间: {color_str}")
+                    custom_palette.append((r, g, b))
+        except ValueError as e:
+            print(f"自定义调色板解析错误: {e}", file=sys.stderr)
+            sys.exit(1)
+
     try:
         quantizer = ColorQuantizer(
             colors=args.colors,
             method=QuantizeMethod(args.method),
             dither=DitherMethod(args.dither),
             dither_strength=args.dither_strength,
+            palette_type=PaletteType(args.palette_type),
+            palette=custom_palette,
         )
     except ValueError as e:
         print(f"错误: {e}", file=sys.stderr)
